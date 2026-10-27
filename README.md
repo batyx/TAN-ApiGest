@@ -47,7 +47,7 @@ Les routes sont centralisées dans `Http/Implementations/ApiEndpoints.cs`.
 |---|---|---|
 | `GET api/BATY/arrets` | liste des arrêts et de leurs lignes | oui (F1, F2) |
 | `GET api/BATY/reset` | remise des données dans l'état initial | non (tests uniquement) |
-| `POST api/BATY/{codeLieu}/arret` | ajoute `numLigne` à l'arrêt s'il n'y figure pas (corps JSON `{ "numLigne": "C6" }`) | oui (F3) |
+| `POST api/BATY/{codeLieu}/arret` | ajoute `numLigne` à l'arrêt s'il n'y figure pas (corps JSON `{ "numLigne": "C6" }`) ; répond `true` ou `false`, toujours en 200 | oui (F3) |
 
 Pas d'authentification. Format d'un arrêt (copie de l'API open data TAN `arrets.json`) :
 

@@ -1,5 +1,4 @@
 using System.Collections.ObjectModel;
-using System.Text.Json;
 using TanApiGest.DTOs.Responses;
 using TanApiGest.Http.Implementations;
 using TanApiGest.Http.Interfaces;
@@ -28,13 +27,19 @@ public class ArretRepository : IArretRepository
         // Le nom de la propriété anonyme donne le nom du champ JSON : { "numLigne": "..." }.
         var body = new { numLigne };
 
-        // Le contenu de la réponse n'est pas documenté : seul le statut HTTP
-        // fait foi. JsonElement accepte n'importe quel JSON sans le typer.
-        ApiResponse<JsonElement> result =
-            await _api.PostAsync<JsonElement>(ApiEndpoints.Arrets.AddLigne, routeParams, body, cancellationToken);
+        // L'API répond toujours 200 avec un booléen (voir routes/api.php) :
+        //   true  → ligne ajoutée ;
+        //   false → arrêt introuvable, ou ligne déjà présente sur l'arrêt.
+        // Le statut HTTP ne suffit donc pas : il faut lire le contenu.
+        ApiResponse<bool> result =
+            await _api.PostAsync<bool>(ApiEndpoints.Arrets.AddLigne, routeParams, body, cancellationToken);
 
-        return result.IsSuccess
-            ? ApiResponse<Ligne>.Success(new Ligne { NumLigne = numLigne })
-            : ApiResponse<Ligne>.Failure(result.ErrorMessage);
+        if (!result.IsSuccess)
+            return ApiResponse<Ligne>.Failure(result.ErrorMessage);
+
+        if (!result.Data)
+            return ApiResponse<Ligne>.Failure($"Ajout refusé par l'API : arrêt {codeLieu} introuvable ou ligne {numLigne} déjà présente.");
+
+        return ApiResponse<Ligne>.Success(new Ligne { NumLigne = numLigne });
     }
 }
