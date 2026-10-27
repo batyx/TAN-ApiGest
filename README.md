@@ -1,0 +1,117 @@
+# TAN-ApiGest
+
+Maquette d'une application desktop (C# / WPF / MVVM) destinée au service informatique de
+Nantes Métropole. À terme, elle permettra de saisir les changements liés aux travaux sur le
+réseau TAN (arrêts, lignes, horaires…). Cette première version **récupère et affiche** les
+données de la plateforme de données publiques.
+
+| Fonctionnalité | Description | Où |
+|---|---|---|
+| **F1** | Liste des arrêts (bus, tram, etc.) gérés par la TAN, avec recherche par nom, code d'arrêt ou code de ligne | menu ☰ → **Arrêts** (grille) |
+| **F2** | Pour chaque arrêt, codes des lignes qui le desservent | colonne **Lignes** + panneau de détail de l'arrêt sélectionné |
+
+Interface réalisée avec **MaterialDesignInXAML**, sur le modèle du projet AliPurchase (même
+architecture, mêmes paquets, mêmes versions).
+
+## Prérequis
+
+- Windows + Visual Studio 2022 (17.14 ou plus) ou Visual Studio 2026, charge de travail
+  « Développement .NET Desktop », SDK **.NET 10** (comme AliPurchase).
+- Accès au réseau local hébergeant l'API dupliquée `http://192.168.1.14/api/BATY/`.
+
+## Installation
+
+```bash
+git clone <url-du-depot-gitlab>/TAN-ApiGest.git
+```
+
+Ouvrir `TAN-ApiGest.slnx`, puis **F5**. Les paquets NuGet ne sont pas versionnés
+(voir `.gitignore`) : Visual Studio les restaure automatiquement à la première compilation
+(ou `dotnet restore`).
+
+## Configuration
+
+Adresse de l'API : `TAN-ApiGest/Properties/AppSettings.cs`.
+
+```csharp
+public const string API_URL   = "http://192.168.1.14/api";
+public const string API_SPACE = "/BATY";
+```
+
+Les routes sont centralisées dans `Http/Implementations/ApiEndpoints.cs`.
+
+## API utilisée
+
+| Route | Rôle | Utilisée par l'appli |
+|---|---|---|
+| `GET api/BATY/arrets` | liste des arrêts et de leurs lignes | oui (F1, F2) |
+| `GET api/BATY/reset` | remise des données dans l'état initial | non (tests uniquement) |
+
+Pas d'authentification. Format d'un arrêt (copie de l'API open data TAN `arrets.json`) :
+
+```json
+{ "codeLieu": "COMM", "libelle": "Commerce", "distance": null,
+  "ligne": [ { "numLigne": "1" }, { "numLigne": "2" }, { "numLigne": "3" } ] }
+```
+
+### Adaptation au nommage de l'API
+
+Les champs JSON ne suivent pas les conventions C# (camelCase, noms français, `ligne` au
+singulier pour un tableau). Les modèles gardent des noms C# conventionnels et précisent le
+nom JSON avec `[JsonPropertyName]` (System.Text.Json) :
+
+| JSON | C# | Type |
+|---|---|---|
+| `codeLieu` | `Arret.CodeLieu` | `string` |
+| `libelle` | `Arret.Libelle` | `string` |
+| `ligne` | `Arret.Lignes` | `Collection<Ligne>` |
+| `numLigne` | `Ligne.NumLigne` | `string` (codes alphanumériques : `C6`…) |
+| `distance` | *non repris* | toujours `null` pour la liste complète |
+
+`Arret.CodesLignes` et `Arret.NombreLignes` sont des propriétés calculées pour l'affichage,
+marquées `[JsonIgnore]`.
+
+## Tests des routes avec Bruno
+
+La collection se trouve dans `bruno/`.
+
+1. Bruno → **Open Collection** → choisir le dossier `bruno/`.
+2. Sélectionner l'environnement **BATY** (`baseUrl = http://192.168.1.14/api/BATY`).
+3. Lancer **01 - Liste des arrêts** : statut 200 et trois tests sur la structure du JSON
+   (tableau non vide, `codeLieu` / `libelle` / `ligne` présents, `numLigne` sur chaque ligne).
+4. **02 - Reset des données** : statut 200.
+
+Si les tests passent, le modèle C# correspond à la réponse réelle. Sinon, adapter
+`Models/Arret.cs` et `Models/Ligne.cs` avant tout le reste.
+
+## Architecture
+
+```
+TAN-ApiGest/
+├── App.xaml(.cs)                  Démarrage : Serilog, filets d'exceptions, conteneur DI
+├── Properties/AppSettings.cs      URL de l'API
+├── Http/                          Client HTTP (IApi / Api) + routes (ApiEndpoints)
+├── DTOs/Responses/ApiResponse.cs  Succès + données, ou message d'erreur
+├── Models/                        Arret, Ligne (mapping JSON)
+├── Repositories/                  IArretRepository / ArretRepository
+├── Services/                      Journalisation, Snackbar, navigation interne
+├── ViewModels/                    MainWindow, Home, Arrets (CommunityToolkit.Mvvm)
+└── Views/                         MainWindow, HomeView, ArretsView (+ composant de menu)
+```
+
+Flux d'un chargement : `ArretsView` (Loaded) → `ArretsViewModel.LoadArretsCommand` →
+`IArretRepository.GetAllAsync` → `IApi.GetAsync` → `ApiResponse<Collection<Arret>>`.
+Les erreurs réseau, JSON ou de délai sont converties en message affiché dans le Snackbar,
+et détaillées dans `logs/tan-apigest_AAAAMMJJ.log` à côté de l'exécutable.
+
+Les lignes d'un arrêt (F2) sont déjà présentes dans la réponse de `/arrets` : afficher le
+détail ne déclenche aucun appel supplémentaire. La recherche filtre la liste en mémoire.
+
+## Versionnage
+
+Un commit par étape (mise en place, Bruno, couche données, F1, F2). Pour publier sur GitLab :
+
+```bash
+git remote add origin <url-du-depot-gitlab>/TAN-ApiGest.git
+git push -u origin main --tags
+```

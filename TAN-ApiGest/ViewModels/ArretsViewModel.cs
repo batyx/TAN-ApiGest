@@ -44,12 +44,10 @@ public partial class ArretsViewModel : ObservableObject
 
     public bool HasSelectedArret => SelectedArret is not null;
 
+    /// <summary>Vrai pendant un appel à l'API : affiche la barre de progression et désactive « Actualiser ».</summary>
     [ObservableProperty]
-    [NotifyPropertyChangedFor(nameof(IsNotBusy))]
     [NotifyCanExecuteChangedFor(nameof(LoadArretsCommand))]
     public partial bool IsBusy { get; set; } = false;
-
-    public bool IsNotBusy => !IsBusy;
 
     /// <summary>Ex. : « 12 arrêt(s) affiché(s) sur 1 345 ».</summary>
     public string CountLabel => $"{Arrets.Count:N0} arrêt(s) affiché(s) sur {_allArrets.Count:N0}";
