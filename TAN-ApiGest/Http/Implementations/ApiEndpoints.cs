@@ -14,7 +14,8 @@ public static class ApiEndpoints
 
         /// <summary>
         /// F3 : ajoute une ligne à l'arrêt {codeLieu} si elle n'y figure pas déjà.
-        /// Corps JSON : { "numLigne": "C6" }.
+        /// Corps JSON : { "numLigne": "C6" }. Réponse : true si ajoutée, false sinon
+        /// (arrêt introuvable ou ligne déjà présente) — toujours avec le statut 200.
         /// </summary>
         public const string AddLigne = "/{codeLieu}/arret";
     }
