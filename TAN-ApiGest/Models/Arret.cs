@@ -43,13 +43,9 @@ public class Arret
     // sans propriété correspondante sont simplement ignorés à la lecture.
 
     /// <summary>
-    /// Codes des lignes séparés par des virgules, ex. "1, 2, 3", pour
-    /// l'affichage en colonne. Calculée : jamais lue ni écrite en JSON.
+    /// Nombre de lignes desservant l'arrêt, pour l'affichage.
+    /// Calculée : jamais lue ni écrite en JSON.
     /// </summary>
-    [JsonIgnore]
-    public string CodesLignes => string.Join(", ", Lignes.Select(ligne => ligne.NumLigne));
-
-    /// <summary>Nombre de lignes desservant l'arrêt.</summary>
     [JsonIgnore]
     public int NombreLignes => Lignes.Count;
 }

@@ -8,7 +8,7 @@ données de la plateforme de données publiques.
 | Fonctionnalité | Description | Où |
 |---|---|---|
 | **F1** | Liste des arrêts (bus, tram, etc.) gérés par la TAN, avec recherche par nom, code d'arrêt ou code de ligne | menu ☰ → **Arrêts** (grille) |
-| **F2** | Pour chaque arrêt, codes des lignes qui le desservent | colonne **Lignes** + panneau de détail de l'arrêt sélectionné |
+| **F2** | Pour chaque arrêt, codes des lignes qui le desservent | grille des lignes, dans le panneau de détail de l'arrêt sélectionné |
 
 Interface réalisée avec **MaterialDesignInXAML**, sur le modèle du projet AliPurchase (même
 architecture, mêmes paquets, mêmes versions).
@@ -22,7 +22,7 @@ architecture, mêmes paquets, mêmes versions).
 ## Installation
 
 ```bash
-git clone <url-du-depot-gitlab>/TAN-ApiGest.git
+git clone https://github.com/batyx/TAN-ApiGest.git
 ```
 
 Ouvrir `TAN-ApiGest.slnx`, puis **F5**. Les paquets NuGet ne sont pas versionnés
@@ -68,8 +68,7 @@ nom JSON avec `[JsonPropertyName]` (System.Text.Json) :
 | `numLigne` | `Ligne.NumLigne` | `string` (codes alphanumériques : `C6`…) |
 | `distance` | *non repris* | toujours `null` pour la liste complète |
 
-`Arret.CodesLignes` et `Arret.NombreLignes` sont des propriétés calculées pour l'affichage,
-marquées `[JsonIgnore]`.
+`Arret.NombreLignes` est une propriété calculée pour l'affichage, marquée `[JsonIgnore]`.
 
 ## Tests des routes avec Bruno
 
@@ -109,9 +108,11 @@ détail ne déclenche aucun appel supplémentaire. La recherche filtre la liste 
 
 ## Versionnage
 
-Un commit par étape (mise en place, Bruno, couche données, F1, F2). Pour publier sur GitLab :
+Dépôt : https://github.com/batyx/TAN-ApiGest
 
-```bash
-git remote add origin <url-du-depot-gitlab>/TAN-ApiGest.git
-git push -u origin main --tags
-```
+| Tag | Contenu |
+|---|---|
+| `v0.1` | Première maquette : F1 (liste des arrêts) et F2 (codes des lignes, en pastilles) |
+| `v0.2` | Colonne « Lignes » retirée de la liste des arrêts ; lignes de l'arrêt présentées dans une grille (DataGrid) |
+
+Les paquets NuGet, `bin/` et `obj/` ne sont pas versionnés (voir `.gitignore`).
