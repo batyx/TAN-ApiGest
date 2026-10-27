@@ -11,7 +11,9 @@ using TanApiGest.Repositories.Interfaces;
 using TanApiGest.Services.Implementations;
 using TanApiGest.Services.Interfaces;
 using TanApiGest.ViewModels;
+using TanApiGest.ViewModels.Dialogs;
 using TanApiGest.Views;
+using TanApiGest.Views.Dialogs;
 
 namespace TanApiGest;
 
@@ -31,6 +33,7 @@ public partial class App : Application
 
         Services = ConfigureServices();
         RegisterNavigableViews(Services.GetRequiredService<IMainWindowNavigationService>());
+        RegisterDialogs(Services.GetRequiredService<IDialogService>());
 
         // Pas d'authentification sur cette API : on ouvre directement la fenêtre principale.
         Services.GetRequiredService<MainWindow>().Show();
@@ -90,6 +93,7 @@ public partial class App : Application
         services.AddSingleton<ILogService, LogService>();
         services.AddSingleton<ISnackbarService, SnackbarService>();
         services.AddSingleton<IMainWindowNavigationService, MainWindowNavigationService>();
+        services.AddSingleton<IDialogService, DialogService>();
 
         // Repositories
         services.AddSingleton<IArretRepository, ArretRepository>();
@@ -98,11 +102,13 @@ public partial class App : Application
         services.AddTransient<MainWindowViewModel>();
         services.AddTransient<HomeViewModel>();
         services.AddTransient<ArretsViewModel>();
+        services.AddTransient<AddLigneDialogViewModel>();
 
         // Fenêtre et vues
         services.AddTransient<MainWindow>();
         services.AddTransient<HomeView>();
         services.AddTransient<ArretsView>();
+        services.AddTransient<AddLigneDialog>();
 
         return services.BuildServiceProvider();
     }
@@ -112,6 +118,12 @@ public partial class App : Application
     {
         navigation.Register<HomeViewModel, HomeView>();
         navigation.Register<ArretsViewModel, ArretsView>();
+    }
+
+    /// <summary>Associe chaque ViewModel de dialogue (fenêtre modale) à sa vue.</summary>
+    private static void RegisterDialogs(IDialogService dialogs)
+    {
+        dialogs.Register<AddLigneDialogViewModel, AddLigneDialog>();
     }
 
     private void OnDispatcherUnhandledException(object sender, DispatcherUnhandledExceptionEventArgs e)

@@ -1,5 +1,6 @@
 using System.Net.Http;
 using System.Net.Http.Headers;
+using System.Text;
 using System.Text.Json;
 using TanApiGest.DTOs.Responses;
 using TanApiGest.Http.Interfaces;
@@ -45,7 +46,7 @@ public class Api : IApi
         return url;
     }
 
-    private async Task<ApiResponse<T>> SendAsync<T>(HttpMethod method, string route, Dictionary<string, string>? routeParams, CancellationToken cancellationToken)
+    private async Task<ApiResponse<T>> SendAsync<T>(HttpMethod method, string route, Dictionary<string, string>? routeParams, object? body, CancellationToken cancellationToken)
     {
         string url = ParseUrl(_apiUrl + route, routeParams);
         _log.Debug($"→ {method} {url}");
@@ -53,6 +54,9 @@ public class Api : IApi
         using HttpRequestMessage request = new(method, url);
         request.Headers.Accept.Add(new MediaTypeWithQualityHeaderValue("application/json"));
         request.Headers.UserAgent.ParseAdd("TanApiGestClient/1.0");
+
+        if (body is not null)
+            request.Content = new StringContent(JsonSerializer.Serialize(body), Encoding.UTF8, "application/json");
 
         try
         {
@@ -63,6 +67,12 @@ public class Api : IApi
                 return ApiResponse<T>.Failure($"Erreur serveur ({(int)response.StatusCode}) : {response.ReasonPhrase}");
 
             string json = await response.Content.ReadAsStringAsync(cancellationToken);
+
+            // Une écriture réussie peut renvoyer un corps vide : ce n'est pas une
+            // erreur, il n'y a simplement rien à désérialiser.
+            if (string.IsNullOrWhiteSpace(json))
+                return ApiResponse<T>.Success(default);
+
             return ApiResponse<T>.Success(JsonSerializer.Deserialize<T>(json, _jsonOptions));
         }
         catch (HttpRequestException httpEx)
@@ -98,5 +108,8 @@ public class Api : IApi
     }
 
     public Task<ApiResponse<T>> GetAsync<T>(string route, Dictionary<string, string>? routeParams = null, CancellationToken cancellationToken = default)
-        => SendAsync<T>(HttpMethod.Get, route, routeParams, cancellationToken);
+        => SendAsync<T>(HttpMethod.Get, route, routeParams, null, cancellationToken);
+
+    public Task<ApiResponse<T>> PostAsync<T>(string route, Dictionary<string, string>? routeParams = null, object? body = null, CancellationToken cancellationToken = default)
+        => SendAsync<T>(HttpMethod.Post, route, routeParams, body, cancellationToken);
 }

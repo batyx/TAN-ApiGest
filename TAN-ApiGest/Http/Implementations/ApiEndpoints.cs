@@ -11,6 +11,12 @@ public static class ApiEndpoints
     {
         /// <summary>Liste des arrêts et des lignes qui les desservent.</summary>
         public const string GetAll = "/arrets";
+
+        /// <summary>
+        /// F3 : ajoute une ligne à l'arrêt {codeLieu} si elle n'y figure pas déjà.
+        /// Corps JSON : { "numLigne": "C6" }.
+        /// </summary>
+        public const string AddLigne = "/{codeLieu}/arret";
     }
 
     public static class Data

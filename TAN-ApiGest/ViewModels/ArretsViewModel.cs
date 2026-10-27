@@ -2,10 +2,12 @@ using CommunityToolkit.Mvvm.ComponentModel;
 using CommunityToolkit.Mvvm.Input;
 using System.Collections.ObjectModel;
 using System.Globalization;
+using TanApiGest.DTOs.DialogResults;
 using TanApiGest.DTOs.Responses;
 using TanApiGest.Models;
 using TanApiGest.Repositories.Interfaces;
 using TanApiGest.Services.Interfaces;
+using TanApiGest.ViewModels.Dialogs;
 
 namespace TanApiGest.ViewModels;
 
@@ -13,11 +15,13 @@ namespace TanApiGest.ViewModels;
 /// Écran « Arrêts ».
 /// F1 : liste des arrêts gérés par la TAN, avec recherche.
 /// F2 : codes des lignes passant par l'arrêt sélectionné.
+/// F3 : ajout d'une ligne à un arrêt (fenêtre modale, POST vers l'API).
 /// </summary>
 public partial class ArretsViewModel : ObservableObject
 {
     private readonly IArretRepository _arretRepository;
     private readonly ISnackbarService _snackbarService;
+    private readonly IDialogService _dialogService;
     private readonly ILogService _log;
     private CancellationTokenSource _cts = new();
 
@@ -44,18 +48,20 @@ public partial class ArretsViewModel : ObservableObject
 
     public bool HasSelectedArret => SelectedArret is not null;
 
-    /// <summary>Vrai pendant un appel à l'API : affiche la barre de progression et désactive « Actualiser ».</summary>
+    /// <summary>Vrai pendant un appel à l'API : affiche la barre de progression et désactive les boutons.</summary>
     [ObservableProperty]
     [NotifyCanExecuteChangedFor(nameof(LoadArretsCommand))]
+    [NotifyCanExecuteChangedFor(nameof(AddLigneCommand))]
     public partial bool IsBusy { get; set; } = false;
 
     /// <summary>Ex. : « 12 arrêt(s) affiché(s) sur 1 345 ».</summary>
     public string CountLabel => $"{Arrets.Count:N0} arrêt(s) affiché(s) sur {_allArrets.Count:N0}";
 
-    public ArretsViewModel(IArretRepository arretRepository, ISnackbarService snackbarService, ILogService log)
+    public ArretsViewModel(IArretRepository arretRepository, ISnackbarService snackbarService, IDialogService dialogService, ILogService log)
     {
         _arretRepository = arretRepository;
         _snackbarService = snackbarService;
+        _dialogService = dialogService;
         _log = log;
     }
 
@@ -107,6 +113,58 @@ public partial class ArretsViewModel : ObservableObject
         }
     }
 
+    /// <summary>
+    /// F3 : ajoute une ligne à l'arrêt passé en paramètre (bouton « Ajouter ligne »
+    /// de la grille). Même déroulement que l'ajout de catégorie d'AliPurchase :
+    /// dialogue → appel API → mise à jour de l'affichage → message.
+    /// </summary>
+    [RelayCommand(CanExecute = nameof(CanRunCommand))]
+    private async Task AddLigneAsync(Arret? arret)
+    {
+        if (arret is null) return;
+
+        // Cliquer sur un bouton dans une ligne ne sélectionne pas forcément cette
+        // ligne : on la sélectionne pour que le panneau de droite montre l'arrêt modifié.
+        SelectedArret = arret;
+
+        AddLigneDialogResult? dialogResult =
+            await _dialogService.ShowAsync<AddLigneDialogViewModel, AddLigneDialogResult>(dialog => dialog.Arret = arret);
+
+        if (dialogResult is null) return;
+
+        // Inutile d'appeler l'API si la ligne dessert déjà l'arrêt.
+        if (arret.HasLigne(dialogResult.NumLigne))
+        {
+            _snackbarService.ShowInfo($"La ligne {dialogResult.NumLigne} dessert déjà l'arrêt « {arret.Libelle} »");
+            return;
+        }
+
+        _log.Information($"ArretsViewModel - AddLigneAsync {arret.CodeLieu} + {dialogResult.NumLigne}");
+        IsBusy = true;
+        CancellationToken token = RenewToken();
+        try
+        {
+            ApiResponse<Ligne> result = await _arretRepository.AddLigneAsync(arret.CodeLieu, dialogResult.NumLigne, token);
+
+            if (token.IsCancellationRequested) return;
+
+            if (!result.IsSuccess)
+            {
+                _snackbarService.ShowError(result.ErrorMessage);
+                return;
+            }
+
+            // Lignes est une ObservableCollection : la grille de droite se met à jour seule.
+            arret.Lignes.Add(result.Data!);
+            _snackbarService.ShowSuccess($"Ligne {result.Data!.NumLigne} ajoutée à l'arrêt « {arret.Libelle} »");
+            _log.Information($"Ligne ajoutée : {arret.CodeLieu}/{result.Data.NumLigne}");
+        }
+        finally
+        {
+            IsBusy = false;
+        }
+    }
+
     /// <summary>Méthode générée par le Toolkit, appelée à chaque modification de SearchText.</summary>
     partial void OnSearchTextChanged(string value) => ApplyFilter();
 
@@ -135,6 +193,6 @@ public partial class ArretsViewModel : ObservableObject
 
         return compare.IndexOf(arret.Libelle, search, options) >= 0
             || compare.IndexOf(arret.CodeLieu, search, options) >= 0
-            || arret.Lignes.Any(ligne => string.Equals(ligne.NumLigne, search, StringComparison.OrdinalIgnoreCase));
+            || arret.HasLigne(search);
     }
 }
