@@ -21,4 +21,10 @@ public interface IArretRepository
     /// Échec si l'API est injoignable ou refuse la modification.
     /// </summary>
     Task<ApiResponse<bool>> UpdateLibelleAsync(string codeLieu, string libelle, CancellationToken cancellationToken = default);
+
+    /// <summary>
+    /// Remet tous les arrêts et leurs lignes dans l'état initial : toutes les
+    /// modifications faites via l'application sont perdues.
+    /// </summary>
+    Task<ApiResponse<bool>> ResetAsync(CancellationToken cancellationToken = default);
 }

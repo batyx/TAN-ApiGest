@@ -17,6 +17,7 @@ namespace TanApiGest.ViewModels;
 /// F2 : codes des lignes passant par l'arrêt sélectionné.
 /// F3 : ajout d'une ligne à un arrêt (fenêtre modale, POST vers l'API).
 /// F4 : modification du nom d'un arrêt directement dans la grille (PUT vers l'API).
+/// Réinitialisation des données de l'API dans leur état initial (GET /reset).
 /// </summary>
 public partial class ArretsViewModel : ObservableObject
 {
@@ -54,6 +55,7 @@ public partial class ArretsViewModel : ObservableObject
     [NotifyCanExecuteChangedFor(nameof(LoadArretsCommand))]
     [NotifyCanExecuteChangedFor(nameof(AddLigneCommand))]
     [NotifyCanExecuteChangedFor(nameof(UpdateLibelleCommand))]
+    [NotifyCanExecuteChangedFor(nameof(ResetCommand))]
     public partial bool IsBusy { get; set; } = false;
 
     /// <summary>Ex. : « 12 arrêt(s) affiché(s) sur 1 345 ».</summary>
@@ -113,6 +115,41 @@ public partial class ArretsViewModel : ObservableObject
         {
             IsBusy = false;
         }
+    }
+
+    /// <summary>
+    /// Remet les données de l'API dans leur état initial (toutes les modifications
+    /// sont perdues), puis recharge la liste pour afficher les données d'origine.
+    /// </summary>
+    [RelayCommand(CanExecute = nameof(CanRunCommand))]
+    private async Task ResetAsync()
+    {
+        _log.Information("ArretsViewModel - ResetAsync");
+        IsBusy = true;
+        CancellationToken token = RenewToken();
+        try
+        {
+            ApiResponse<bool> result = await _arretRepository.ResetAsync(token);
+
+            if (token.IsCancellationRequested) return;
+
+            if (!result.IsSuccess)
+            {
+                _snackbarService.ShowError(result.ErrorMessage);
+                return;
+            }
+
+            _snackbarService.ShowSuccess("Données réinitialisées");
+            _log.Information("Données de l'API réinitialisées");
+        }
+        finally
+        {
+            IsBusy = false;
+        }
+
+        // La liste affichée contient peut-être des modifications annulées par le
+        // reset : on la recharge depuis l'API (IsBusy est de nouveau à false).
+        await LoadArretsAsync();
     }
 
     /// <summary>

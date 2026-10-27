@@ -30,7 +30,10 @@ public static class ApiEndpoints
 
     public static class Data
     {
-        /// <summary>Remise des données dans leur état initial (non utilisée par l'application à ce stade).</summary>
+        /// <summary>
+        /// Remet les données de cette copie de l'API dans leur état initial
+        /// (bouton « Réinitialiser »). Réponse : true.
+        /// </summary>
         public const string Reset = "/reset";
     }
 }

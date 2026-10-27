@@ -28,7 +28,7 @@
                 <RowDefinition Height="Auto" />
             </Grid.RowDefinitions>
 
-            <!--  Titre + actualisation  -->
+            <!--  Titre, actualisation et réinitialisation  -->
             <StackPanel
                 Grid.Row="0"
                 Margin="0,0,0,12"
@@ -45,6 +45,18 @@
                     <StackPanel Orientation="Horizontal">
                         <materialDesign:PackIcon Margin="0,0,6,0" Kind="Refresh" />
                         <TextBlock Text="Actualiser" />
+                    </StackPanel>
+                </Button>
+                <!--  Remet les données de l'API dans leur état initial (GET /reset), puis recharge la liste.  -->
+                <Button
+                    Margin="8,0,0,0"
+                    VerticalAlignment="Center"
+                    Command="{Binding ResetCommand}"
+                    Style="{StaticResource MaterialDesignOutlinedButton}"
+                    ToolTip="Annule toutes les modifications et remet les données dans leur état initial">
+                    <StackPanel Orientation="Horizontal">
+                        <materialDesign:PackIcon Margin="0,0,6,0" Kind="DatabaseRefresh" />
+                        <TextBlock Text="Réinitialiser" />
                     </StackPanel>
                 </Button>
             </StackPanel>

@@ -62,4 +62,14 @@ public class ArretRepository : IArretRepository
 
         return result;
     }
+
+    public async Task<ApiResponse<bool>> ResetAsync(CancellationToken cancellationToken = default)
+    {
+        ApiResponse<bool> result = await _api.GetAsync<bool>(ApiEndpoints.Data.Reset, null, cancellationToken);
+
+        if (result.IsSuccess && !result.Data)
+            return ApiResponse<bool>.Failure("La réinitialisation des données a échoué.");
+
+        return result;
+    }
 }
