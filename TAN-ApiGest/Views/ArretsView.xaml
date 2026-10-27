@@ -65,26 +65,128 @@
             IsIndeterminate="True"
             Visibility="{Binding IsBusy, Converter={StaticResource BooleanToVisibilityConverter}}" />
 
-        <!--  F1 : liste des arrêts  -->
-        <DataGrid
-            Grid.Row="3"
-            AutoGenerateColumns="False"
-            CanUserAddRows="False"
-            CanUserDeleteRows="False"
-            IsReadOnly="True"
-            ItemsSource="{Binding Arrets}"
-            SelectionMode="Single">
-            <DataGrid.Columns>
-                <DataGridTextColumn
-                    Width="110"
-                    Binding="{Binding CodeLieu}"
-                    Header="Code" />
-                <DataGridTextColumn
-                    Width="*"
-                    Binding="{Binding Libelle}"
-                    Header="Arrêt" />
-            </DataGrid.Columns>
-        </DataGrid>
+        <Grid Grid.Row="3">
+            <Grid.ColumnDefinitions>
+                <ColumnDefinition Width="*" />
+                <ColumnDefinition Width="16" />
+                <ColumnDefinition Width="340" />
+            </Grid.ColumnDefinitions>
+
+            <!--  F1 : liste des arrêts (la colonne « Lignes » donne déjà un aperçu de F2)  -->
+            <DataGrid
+                Grid.Column="0"
+                AutoGenerateColumns="False"
+                CanUserAddRows="False"
+                CanUserDeleteRows="False"
+                IsReadOnly="True"
+                ItemsSource="{Binding Arrets}"
+                SelectedItem="{Binding SelectedArret}"
+                SelectionMode="Single">
+                <DataGrid.Columns>
+                    <DataGridTextColumn
+                        Width="100"
+                        Binding="{Binding CodeLieu}"
+                        Header="Code" />
+                    <DataGridTextColumn
+                        Width="*"
+                        Binding="{Binding Libelle}"
+                        Header="Arrêt" />
+                    <DataGridTextColumn
+                        Width="*"
+                        Binding="{Binding CodesLignes, Mode=OneWay}"
+                        Header="Lignes" />
+                </DataGrid.Columns>
+            </DataGrid>
+
+            <!--  F2 : détail des lignes de l'arrêt sélectionné  -->
+            <materialDesign:Card Grid.Column="2" Padding="16">
+                <ScrollViewer VerticalScrollBarVisibility="Auto">
+                    <StackPanel>
+                        <TextBlock
+                            Margin="0,0,0,12"
+                            FontSize="16"
+                            FontWeight="SemiBold"
+                            Text="Lignes desservant l'arrêt" />
+
+                        <!--  Message affiché tant qu'aucun arrêt n'est sélectionné  -->
+                        <TextBlock
+                            Opacity="0.7"
+                            Text="Sélectionnez un arrêt dans la liste pour afficher les lignes qui le desservent."
+                            TextWrapping="Wrap">
+                            <TextBlock.Style>
+                                <Style TargetType="TextBlock">
+                                    <Setter Property="Visibility" Value="Collapsed" />
+                                    <Style.Triggers>
+                                        <DataTrigger Binding="{Binding SelectedArret}" Value="{x:Null}">
+                                            <Setter Property="Visibility" Value="Visible" />
+                                        </DataTrigger>
+                                    </Style.Triggers>
+                                </Style>
+                            </TextBlock.Style>
+                        </TextBlock>
+
+                        <!--  Détail, visible dès qu'un arrêt est sélectionné  -->
+                        <StackPanel Visibility="{Binding HasSelectedArret, Converter={StaticResource BooleanToVisibilityConverter}}">
+                            <TextBlock
+                                FontSize="20"
+                                Text="{Binding SelectedArret.Libelle}"
+                                TextWrapping="Wrap" />
+                            <TextBlock
+                                Margin="0,4,0,0"
+                                Opacity="0.7"
+                                Text="{Binding SelectedArret.CodeLieu, StringFormat='Code arrêt : {0}'}" />
+                            <TextBlock
+                                Margin="0,4,0,12"
+                                Opacity="0.7"
+                                Text="{Binding SelectedArret.NombreLignes, StringFormat={}{0} ligne(s)}" />
+
+                            <!--  Une pastille par code de ligne  -->
+                            <ItemsControl ItemsSource="{Binding SelectedArret.Lignes}">
+                                <ItemsControl.ItemsPanel>
+                                    <ItemsPanelTemplate>
+                                        <WrapPanel />
+                                    </ItemsPanelTemplate>
+                                </ItemsControl.ItemsPanel>
+                                <ItemsControl.ItemTemplate>
+                                    <DataTemplate>
+                                        <Border
+                                            MinWidth="44"
+                                            Margin="0,0,8,8"
+                                            Padding="12,4"
+                                            Background="{DynamicResource MaterialDesign.Brush.Primary}"
+                                            CornerRadius="14">
+                                            <TextBlock
+                                                HorizontalAlignment="Center"
+                                                FontSize="14"
+                                                FontWeight="Bold"
+                                                Foreground="{DynamicResource MaterialDesign.Brush.Primary.Foreground}"
+                                                Text="{Binding NumLigne}" />
+                                        </Border>
+                                    </DataTemplate>
+                                </ItemsControl.ItemTemplate>
+                            </ItemsControl>
+
+                            <!--  Cas d'un arrêt sans ligne (tableau « ligne » vide dans l'API)  -->
+                            <TextBlock
+                                Opacity="0.7"
+                                Text="Aucune ligne ne dessert actuellement cet arrêt."
+                                TextWrapping="Wrap">
+                                <TextBlock.Style>
+                                    <Style TargetType="TextBlock">
+                                        <Setter Property="Visibility" Value="Collapsed" />
+                                        <Style.Triggers>
+                                            <DataTrigger Binding="{Binding SelectedArret.NombreLignes}" Value="0">
+                                                <Setter Property="Visibility" Value="Visible" />
+                                            </DataTrigger>
+                                        </Style.Triggers>
+                                    </Style>
+                                </TextBlock.Style>
+                            </TextBlock>
+                        </StackPanel>
+                    </StackPanel>
+                </ScrollViewer>
+            </materialDesign:Card>
+        </Grid>
 
         <!--  Compteur  -->
         <TextBlock

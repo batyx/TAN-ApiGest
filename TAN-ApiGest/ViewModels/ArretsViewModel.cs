@@ -10,7 +10,9 @@ using TanApiGest.Services.Interfaces;
 namespace TanApiGest.ViewModels;
 
 /// <summary>
-/// Écran « Arrêts » — F1 : liste des arrêts gérés par la TAN, avec recherche.
+/// Écran « Arrêts ».
+/// F1 : liste des arrêts gérés par la TAN, avec recherche.
+/// F2 : codes des lignes passant par l'arrêt sélectionné.
 /// </summary>
 public partial class ArretsViewModel : ObservableObject
 {
@@ -30,6 +32,17 @@ public partial class ArretsViewModel : ObservableObject
     /// <summary>Texte saisi dans la zone de recherche (libellé, code d'arrêt ou code de ligne).</summary>
     [ObservableProperty]
     public partial string SearchText { get; set; } = string.Empty;
+
+    /// <summary>
+    /// F2 : arrêt sélectionné dans la grille. Ses lignes (SelectedArret.Lignes)
+    /// sont déjà présentes dans la réponse de GET /arrets : aucun appel
+    /// supplémentaire à l'API n'est nécessaire. Vaut null si aucune sélection.
+    /// </summary>
+    [ObservableProperty]
+    [NotifyPropertyChangedFor(nameof(HasSelectedArret))]
+    public partial Arret? SelectedArret { get; set; }
+
+    public bool HasSelectedArret => SelectedArret is not null;
 
     [ObservableProperty]
     [NotifyPropertyChangedFor(nameof(IsNotBusy))]
