@@ -1,0 +1,67 @@
+meta {
+  name: 01 - Liste des arrêts
+  type: http
+  seq: 1
+}
+
+get {
+  url: {{baseUrl}}/arrets
+  body: none
+  auth: none
+}
+
+headers {
+  Accept: application/json
+}
+
+assert {
+  res.status: eq 200
+}
+
+tests {
+  const arrets = res.getBody();
+  
+  test("La réponse est un tableau non vide", function () {
+    expect(arrets).to.be.an("array").that.is.not.empty;
+  });
+  
+  test("Chaque arrêt a un codeLieu, un libelle et un tableau ligne", function () {
+    arrets.forEach(function (arret) {
+      expect(arret.codeLieu).to.be.a("string").that.is.not.empty;
+      expect(arret.libelle).to.be.a("string").that.is.not.empty;
+      expect(arret.ligne).to.be.an("array");
+    });
+  });
+  
+  test("Chaque ligne d'un arrêt a un numLigne", function () {
+    arrets.forEach(function (arret) {
+      arret.ligne.forEach(function (ligne) {
+        expect(ligne.numLigne).to.be.a("string").that.is.not.empty;
+      });
+    });
+  });
+}
+
+docs {
+  # GET /arrets
+  
+  Liste de tous les arrêts du réseau TAN, avec les lignes qui les desservent.
+  
+  Format de réponse — exemple illustratif (copie de l'API open data `open.tan.fr/ewp/arrets.json`) :
+  
+  ```json
+  [
+    {
+      "codeLieu": "COMM",
+      "libelle": "Commerce",
+      "distance": null,
+      "ligne": [ { "numLigne": "1" }, { "numLigne": "2" }, { "numLigne": "3" } ]
+    }
+  ]
+  ```
+  
+  Points d'attention pour la désérialisation C# :
+  - noms de champs en camelCase et en français (`codeLieu`, `libelle`, `numLigne`) ;
+  - `ligne` est au singulier alors qu'il contient un **tableau** de lignes ;
+  - `distance` vaut `null` pour la liste complète (utile seulement pour une recherche par position).
+}

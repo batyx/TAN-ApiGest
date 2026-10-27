@@ -1,0 +1,25 @@
+meta {
+  name: 02 - Reset des données
+  type: http
+  seq: 2
+}
+
+get {
+  url: {{baseUrl}}/reset
+  body: none
+  auth: none
+}
+
+assert {
+  res.status: eq 200
+}
+
+docs {
+  # GET /reset
+  
+  Remet les données de cette copie de l'API dans leur état initial.
+  À utiliser après des essais de modification, puis relancer « 01 - Liste des arrêts »
+  pour vérifier que la liste est revenue à l'identique.
+  
+  Route non utilisée par l'application à ce stade.
+}

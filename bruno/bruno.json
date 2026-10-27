@@ -1,0 +1,6 @@
+{
+  "version": "1",
+  "name": "TAN-ApiGest",
+  "type": "collection",
+  "ignore": ["node_modules", ".git"]
+}
