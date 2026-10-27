@@ -112,4 +112,7 @@ public class Api : IApi
 
     public Task<ApiResponse<T>> PostAsync<T>(string route, Dictionary<string, string>? routeParams = null, object? body = null, CancellationToken cancellationToken = default)
         => SendAsync<T>(HttpMethod.Post, route, routeParams, body, cancellationToken);
+
+    public Task<ApiResponse<T>> PutAsync<T>(string route, Dictionary<string, string>? routeParams = null, object? body = null, CancellationToken cancellationToken = default)
+        => SendAsync<T>(HttpMethod.Put, route, routeParams, body, cancellationToken);
 }

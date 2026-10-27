@@ -28,7 +28,7 @@
                 <RowDefinition Height="Auto" />
             </Grid.RowDefinitions>
 
-            <!--  Titre + actualisation  -->
+            <!--  Titre, actualisation et réinitialisation  -->
             <StackPanel
                 Grid.Row="0"
                 Margin="0,0,0,12"
@@ -45,6 +45,18 @@
                     <StackPanel Orientation="Horizontal">
                         <materialDesign:PackIcon Margin="0,0,6,0" Kind="Refresh" />
                         <TextBlock Text="Actualiser" />
+                    </StackPanel>
+                </Button>
+                <!--  Remet les données de l'API dans leur état initial (GET /reset), puis recharge la liste.  -->
+                <Button
+                    Margin="8,0,0,0"
+                    VerticalAlignment="Center"
+                    Command="{Binding ResetCommand}"
+                    Style="{StaticResource MaterialDesignOutlinedButton}"
+                    ToolTip="Annule toutes les modifications et remet les données dans leur état initial">
+                    <StackPanel Orientation="Horizontal">
+                        <materialDesign:PackIcon Margin="0,0,6,0" Kind="DatabaseRefresh" />
+                        <TextBlock Text="Réinitialiser" />
                     </StackPanel>
                 </Button>
             </StackPanel>
@@ -74,24 +86,34 @@
                     <ColumnDefinition Width="340" />
                 </Grid.ColumnDefinitions>
 
-                <!--  F1 : liste des arrêts  -->
+                <!--  F1 : liste des arrêts — F4 : le nom est modifiable (double-clic sur la cellule)  -->
                 <DataGrid
+                    x:Name="ArretsDataGrid"
                     Grid.Column="0"
                     AutoGenerateColumns="False"
                     CanUserAddRows="False"
                     CanUserDeleteRows="False"
-                    IsReadOnly="True"
                     ItemsSource="{Binding Arrets}"
                     SelectedItem="{Binding SelectedArret}"
                     SelectionMode="Single">
+
+                    <!--  F4 : fin d'édition d'une cellule → enregistrement via l'API (comme AliPurchase).  -->
+                    <i:Interaction.Triggers>
+                        <i:EventTrigger EventName="CellEditEnding">
+                            <i:InvokeCommandAction Command="{Binding UpdateLibelleCommand}" CommandParameter="{Binding SelectedItem, ElementName=ArretsDataGrid}" />
+                        </i:EventTrigger>
+                    </i:Interaction.Triggers>
+
                     <DataGrid.Columns>
                         <DataGridTextColumn
                             Width="100"
                             Binding="{Binding CodeLieu}"
-                            Header="Code" />
+                            Header="Code"
+                            IsReadOnly="True" />
+                        <!--  PropertyChanged : la valeur saisie est déjà dans Libelle quand CellEditEnding se déclenche.  -->
                         <DataGridTextColumn
                             Width="*"
-                            Binding="{Binding Libelle}"
+                            Binding="{Binding Libelle, UpdateSourceTrigger=PropertyChanged}"
                             Header="Arrêt" />
 
                         <!--
@@ -99,7 +121,10 @@
                             on remonte au DataGrid pour atteindre la commande du ViewModel,
                             et on passe l'arrêt de la ligne en paramètre.
                         -->
-                        <DataGridTemplateColumn Width="Auto" Header="">
+                        <DataGridTemplateColumn
+                            Width="Auto"
+                            Header=""
+                            IsReadOnly="True">
                             <DataGridTemplateColumn.CellTemplate>
                                 <DataTemplate>
                                     <Button
@@ -222,12 +247,14 @@
                 </materialDesign:Card>
             </Grid>
 
-            <!--  Compteur  -->
-            <TextBlock
-                Grid.Row="4"
-                Margin="0,8,0,0"
-                Opacity="0.7"
-                Text="{Binding CountLabel}" />
+            <!--  Compteur et aide à l'édition  -->
+            <DockPanel Grid.Row="4" Margin="0,8,0,0">
+                <TextBlock
+                    DockPanel.Dock="Right"
+                    Opacity="0.7"
+                    Text="Double-cliquez sur le nom d'un arrêt pour le modifier." />
+                <TextBlock Opacity="0.7" Text="{Binding CountLabel}" />
+            </DockPanel>
         </Grid>
     </materialDesign:DialogHost>
 </UserControl>

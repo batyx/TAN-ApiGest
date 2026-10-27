@@ -18,11 +18,22 @@ public static class ApiEndpoints
         /// (arrêt introuvable ou ligne déjà présente) — toujours avec le statut 200.
         /// </summary>
         public const string AddLigne = "/{codeLieu}/arret";
+
+        /// <summary>
+        /// F4 : modifie l'arrêt {codeLieu}. Corps JSON : { "libelle": "..." }
+        /// (l'API accepte aussi "codeLieu", non utilisé par l'application).
+        /// Réponse : true si modifié, false si arrêt introuvable ou nom vide — toujours en 200.
+        /// Même URL que AddLigne : c'est le verbe (POST / PUT) qui distingue les deux routes.
+        /// </summary>
+        public const string Update = "/{codeLieu}/arret";
     }
 
     public static class Data
     {
-        /// <summary>Remise des données dans leur état initial (non utilisée par l'application à ce stade).</summary>
+        /// <summary>
+        /// Remet les données de cette copie de l'API dans leur état initial
+        /// (bouton « Réinitialiser »). Réponse : true.
+        /// </summary>
         public const string Reset = "/reset";
     }
 }

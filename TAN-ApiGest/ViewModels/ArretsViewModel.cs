@@ -16,6 +16,8 @@ namespace TanApiGest.ViewModels;
 /// F1 : liste des arrêts gérés par la TAN, avec recherche.
 /// F2 : codes des lignes passant par l'arrêt sélectionné.
 /// F3 : ajout d'une ligne à un arrêt (fenêtre modale, POST vers l'API).
+/// F4 : modification du nom d'un arrêt directement dans la grille (PUT vers l'API).
+/// Réinitialisation des données de l'API dans leur état initial (GET /reset).
 /// </summary>
 public partial class ArretsViewModel : ObservableObject
 {
@@ -52,6 +54,8 @@ public partial class ArretsViewModel : ObservableObject
     [ObservableProperty]
     [NotifyCanExecuteChangedFor(nameof(LoadArretsCommand))]
     [NotifyCanExecuteChangedFor(nameof(AddLigneCommand))]
+    [NotifyCanExecuteChangedFor(nameof(UpdateLibelleCommand))]
+    [NotifyCanExecuteChangedFor(nameof(ResetCommand))]
     public partial bool IsBusy { get; set; } = false;
 
     /// <summary>Ex. : « 12 arrêt(s) affiché(s) sur 1 345 ».</summary>
@@ -114,6 +118,41 @@ public partial class ArretsViewModel : ObservableObject
     }
 
     /// <summary>
+    /// Remet les données de l'API dans leur état initial (toutes les modifications
+    /// sont perdues), puis recharge la liste pour afficher les données d'origine.
+    /// </summary>
+    [RelayCommand(CanExecute = nameof(CanRunCommand))]
+    private async Task ResetAsync()
+    {
+        _log.Information("ArretsViewModel - ResetAsync");
+        IsBusy = true;
+        CancellationToken token = RenewToken();
+        try
+        {
+            ApiResponse<bool> result = await _arretRepository.ResetAsync(token);
+
+            if (token.IsCancellationRequested) return;
+
+            if (!result.IsSuccess)
+            {
+                _snackbarService.ShowError(result.ErrorMessage);
+                return;
+            }
+
+            _snackbarService.ShowSuccess("Données réinitialisées");
+            _log.Information("Données de l'API réinitialisées");
+        }
+        finally
+        {
+            IsBusy = false;
+        }
+
+        // La liste affichée contient peut-être des modifications annulées par le
+        // reset : on la recharge depuis l'API (IsBusy est de nouveau à false).
+        await LoadArretsAsync();
+    }
+
+    /// <summary>
     /// F3 : ajoute une ligne à l'arrêt passé en paramètre (bouton « Ajouter ligne »
     /// de la grille). Même déroulement que l'ajout de catégorie d'AliPurchase :
     /// dialogue → appel API → mise à jour de l'affichage → message.
@@ -158,6 +197,67 @@ public partial class ArretsViewModel : ObservableObject
             arret.Lignes.Add(result.Data!);
             _snackbarService.ShowSuccess($"Ligne {result.Data!.NumLigne} ajoutée à l'arrêt « {arret.Libelle} »");
             _log.Information($"Ligne ajoutée : {arret.CodeLieu}/{result.Data.NumLigne}");
+        }
+        finally
+        {
+            IsBusy = false;
+        }
+    }
+
+    /// <summary>
+    /// F4 : enregistre le nom modifié dans la grille. Appelée à la fin de
+    /// l'édition d'une cellule (CellEditEnding), avec la ligne sélectionnée —
+    /// même principe que UpdateCategoryNameCommand dans AliPurchase.
+    /// Grâce à UpdateSourceTrigger=PropertyChanged, arret.Libelle contient
+    /// déjà le nouveau nom ; arret.OriginalLibelle contient l'ancien.
+    /// </summary>
+    [RelayCommand(CanExecute = nameof(CanRunCommand))]
+    private async Task UpdateLibelleAsync(object? selectedItem)
+    {
+        if (selectedItem is not Arret arret) return;
+
+        string libelle = arret.Libelle.Trim();
+
+        // Nom inchangé (simple clic dans la cellule) : pas d'appel à l'API.
+        if (libelle == arret.OriginalLibelle)
+        {
+            arret.RevertLibelle();
+            return;
+        }
+
+        // Nom vide : refusé avant même d'appeler l'API.
+        if (libelle.Length == 0)
+        {
+            arret.RevertLibelle();
+            _snackbarService.ShowError("Le nom de l'arrêt ne peut pas être vide.");
+            return;
+        }
+
+        _log.Information($"ArretsViewModel - UpdateLibelleAsync {arret.CodeLieu} : « {arret.OriginalLibelle} » → « {libelle} »");
+        IsBusy = true;
+        CancellationToken token = RenewToken();
+        try
+        {
+            ApiResponse<bool> result = await _arretRepository.UpdateLibelleAsync(arret.CodeLieu, libelle, token);
+
+            if (token.IsCancellationRequested)
+            {
+                arret.RevertLibelle();
+                return;
+            }
+
+            if (!result.IsSuccess)
+            {
+                // L'affichage doit refléter ce qui est réellement enregistré côté API.
+                arret.RevertLibelle();
+                _snackbarService.ShowError(result.ErrorMessage);
+                return;
+            }
+
+            arret.Libelle = libelle;
+            arret.AcceptLibelle();
+            _snackbarService.ShowSuccess($"Arrêt {arret.CodeLieu} renommé « {libelle} »");
+            _log.Information($"Arrêt renommé : {arret.CodeLieu}/{libelle}");
         }
         finally
         {

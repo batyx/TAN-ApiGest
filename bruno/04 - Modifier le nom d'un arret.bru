@@ -1,0 +1,50 @@
+meta {
+  name: 04 - Modifier le nom d'un arrêt
+  type: http
+  seq: 4
+}
+
+put {
+  url: {{baseUrl}}/{{codeLieu}}/arret
+  body: json
+  auth: none
+}
+
+headers {
+  Accept: application/json
+}
+
+body:json {
+  {
+    "libelle": "{{libelle}}"
+  }
+}
+
+vars:pre-request {
+  codeLieu: COMM
+  libelle: Commerce (test)
+}
+
+tests {
+  test("Statut 200", function () {
+    expect(res.getStatus()).to.equal(200);
+  });
+  
+  test("Le nom est modifié (l'API répond true)", function () {
+    expect(res.getBody()).to.equal(true);
+  });
+}
+
+docs {
+  # PUT /{codeLieu}/arret
+  
+  Modifie l'arrêt `codeLieu`. Utilisée par la fonctionnalité F4 de l'application,
+  qui n'envoie que le nom : `{ "libelle": "Nouveau nom" }`.
+  L'API accepte aussi `codeLieu` dans le corps pour changer le code (non utilisé).
+  
+  Réponse : toujours statut 200, avec `true` si l'arrêt est modifié, `false` si
+  l'arrêt est introuvable, si une valeur est vide ou si le nouveau code est déjà pris.
+  
+  Vérification : relancer « 01 - Liste des arrêts », l'arrêt COMM doit s'appeler
+  « Commerce (test) ». Ensuite, « 02 - Reset des données » rétablit les données.
+}

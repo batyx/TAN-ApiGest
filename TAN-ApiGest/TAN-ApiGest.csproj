@@ -13,7 +13,7 @@
     <RootNamespace>TanApiGest</RootNamespace>
     <AssemblyName>TAN-ApiGest</AssemblyName>
     <Product>TAN-ApiGest</Product>
-    <Version>0.2.0</Version>
+    <Version>0.3.0</Version>
     <Company>Nantes Métropole</Company>
   </PropertyGroup>
 
