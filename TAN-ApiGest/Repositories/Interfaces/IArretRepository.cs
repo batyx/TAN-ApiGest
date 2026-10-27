@@ -15,4 +15,10 @@ public interface IArretRepository
     /// Data contient la ligne ajoutée, prête à être insérée dans Arret.Lignes.
     /// </summary>
     Task<ApiResponse<Ligne>> AddLigneAsync(string codeLieu, string numLigne, CancellationToken cancellationToken = default);
+
+    /// <summary>
+    /// F4 : remplace le nom de l'arrêt codeLieu par libelle.
+    /// Échec si l'API est injoignable ou refuse la modification.
+    /// </summary>
+    Task<ApiResponse<bool>> UpdateLibelleAsync(string codeLieu, string libelle, CancellationToken cancellationToken = default);
 }

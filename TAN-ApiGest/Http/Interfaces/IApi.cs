@@ -19,4 +19,10 @@ public interface IApi
     /// et désérialise la réponse en T (F3 : ajout d'une ligne à un arrêt).
     /// </summary>
     Task<ApiResponse<T>> PostAsync<T>(string route, Dictionary<string, string>? routeParams = null, object? body = null, CancellationToken cancellationToken = default);
+
+    /// <summary>
+    /// Envoie une requête PUT dont le corps est l'objet body sérialisé en JSON,
+    /// et désérialise la réponse en T (F4 : modification d'un arrêt).
+    /// </summary>
+    Task<ApiResponse<T>> PutAsync<T>(string route, Dictionary<string, string>? routeParams = null, object? body = null, CancellationToken cancellationToken = default);
 }

@@ -16,6 +16,7 @@ namespace TanApiGest.ViewModels;
 /// F1 : liste des arrêts gérés par la TAN, avec recherche.
 /// F2 : codes des lignes passant par l'arrêt sélectionné.
 /// F3 : ajout d'une ligne à un arrêt (fenêtre modale, POST vers l'API).
+/// F4 : modification du nom d'un arrêt directement dans la grille (PUT vers l'API).
 /// </summary>
 public partial class ArretsViewModel : ObservableObject
 {
@@ -52,6 +53,7 @@ public partial class ArretsViewModel : ObservableObject
     [ObservableProperty]
     [NotifyCanExecuteChangedFor(nameof(LoadArretsCommand))]
     [NotifyCanExecuteChangedFor(nameof(AddLigneCommand))]
+    [NotifyCanExecuteChangedFor(nameof(UpdateLibelleCommand))]
     public partial bool IsBusy { get; set; } = false;
 
     /// <summary>Ex. : « 12 arrêt(s) affiché(s) sur 1 345 ».</summary>
@@ -158,6 +160,67 @@ public partial class ArretsViewModel : ObservableObject
             arret.Lignes.Add(result.Data!);
             _snackbarService.ShowSuccess($"Ligne {result.Data!.NumLigne} ajoutée à l'arrêt « {arret.Libelle} »");
             _log.Information($"Ligne ajoutée : {arret.CodeLieu}/{result.Data.NumLigne}");
+        }
+        finally
+        {
+            IsBusy = false;
+        }
+    }
+
+    /// <summary>
+    /// F4 : enregistre le nom modifié dans la grille. Appelée à la fin de
+    /// l'édition d'une cellule (CellEditEnding), avec la ligne sélectionnée —
+    /// même principe que UpdateCategoryNameCommand dans AliPurchase.
+    /// Grâce à UpdateSourceTrigger=PropertyChanged, arret.Libelle contient
+    /// déjà le nouveau nom ; arret.OriginalLibelle contient l'ancien.
+    /// </summary>
+    [RelayCommand(CanExecute = nameof(CanRunCommand))]
+    private async Task UpdateLibelleAsync(object? selectedItem)
+    {
+        if (selectedItem is not Arret arret) return;
+
+        string libelle = arret.Libelle.Trim();
+
+        // Nom inchangé (simple clic dans la cellule) : pas d'appel à l'API.
+        if (libelle == arret.OriginalLibelle)
+        {
+            arret.RevertLibelle();
+            return;
+        }
+
+        // Nom vide : refusé avant même d'appeler l'API.
+        if (libelle.Length == 0)
+        {
+            arret.RevertLibelle();
+            _snackbarService.ShowError("Le nom de l'arrêt ne peut pas être vide.");
+            return;
+        }
+
+        _log.Information($"ArretsViewModel - UpdateLibelleAsync {arret.CodeLieu} : « {arret.OriginalLibelle} » → « {libelle} »");
+        IsBusy = true;
+        CancellationToken token = RenewToken();
+        try
+        {
+            ApiResponse<bool> result = await _arretRepository.UpdateLibelleAsync(arret.CodeLieu, libelle, token);
+
+            if (token.IsCancellationRequested)
+            {
+                arret.RevertLibelle();
+                return;
+            }
+
+            if (!result.IsSuccess)
+            {
+                // L'affichage doit refléter ce qui est réellement enregistré côté API.
+                arret.RevertLibelle();
+                _snackbarService.ShowError(result.ErrorMessage);
+                return;
+            }
+
+            arret.Libelle = libelle;
+            arret.AcceptLibelle();
+            _snackbarService.ShowSuccess($"Arrêt {arret.CodeLieu} renommé « {libelle} »");
+            _log.Information($"Arrêt renommé : {arret.CodeLieu}/{libelle}");
         }
         finally
         {

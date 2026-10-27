@@ -42,4 +42,24 @@ public class ArretRepository : IArretRepository
 
         return ApiResponse<Ligne>.Success(new Ligne { NumLigne = numLigne });
     }
+
+    public async Task<ApiResponse<bool>> UpdateLibelleAsync(string codeLieu, string libelle, CancellationToken cancellationToken = default)
+    {
+        var routeParams = new Dictionary<string, string> { { "codeLieu", codeLieu } };
+
+        // Seul le nom est envoyé : l'API ne modifie que les champs présents.
+        var body = new { libelle };
+
+        // Comme pour l'ajout : statut 200 dans tous les cas, true / false dans le contenu.
+        ApiResponse<bool> result =
+            await _api.PutAsync<bool>(ApiEndpoints.Arrets.Update, routeParams, body, cancellationToken);
+
+        if (!result.IsSuccess)
+            return result;
+
+        if (!result.Data)
+            return ApiResponse<bool>.Failure($"Modification refusée par l'API : arrêt {codeLieu} introuvable ou nom vide.");
+
+        return result;
+    }
 }

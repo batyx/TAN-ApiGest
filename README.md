@@ -10,6 +10,7 @@ données de la plateforme de données publiques.
 | **F1** | Liste des arrêts (bus, tram, etc.) gérés par la TAN, avec recherche par nom, code d'arrêt ou code de ligne | menu ☰ → **Arrêts** (grille) |
 | **F2** | Pour chaque arrêt, codes des lignes qui le desservent | grille des lignes, dans le panneau de détail de l'arrêt sélectionné |
 | **F3** | Ajout d'une ligne à un arrêt | bouton **Ajouter Ligne** de chaque arrêt → fenêtre modale → la grille des lignes se met à jour |
+| **F4** | Modification du nom d'un arrêt | double-clic sur le nom dans la grille des arrêts, saisie, puis Entrée ou clic ailleurs |
 
 Interface réalisée avec **MaterialDesignInXAML**, sur le modèle du projet AliPurchase (même
 architecture, mêmes paquets, mêmes versions).
@@ -48,6 +49,8 @@ Les routes sont centralisées dans `Http/Implementations/ApiEndpoints.cs`.
 | `GET api/BATY/arrets` | liste des arrêts et de leurs lignes | oui (F1, F2) |
 | `GET api/BATY/reset` | remise des données dans l'état initial | non (tests uniquement) |
 | `POST api/BATY/{codeLieu}/arret` | ajoute `numLigne` à l'arrêt s'il n'y figure pas (corps JSON `{ "numLigne": "C6" }`) ; répond `true` ou `false`, toujours en 200 | oui (F3) |
+| `PUT api/BATY/{codeLieu}/arret` | modifie l'arrêt : corps `{ "libelle": "..." }` (et/ou `codeLieu`) ; répond `true` ou `false`, toujours en 200 | oui (F4, nom seulement) |
+| `PUT api/BATY/{codeLieu}/arret/{numLigne}` | remplace un code de ligne : corps `{ "numLigne": "..." }` ; répond `true` ou `false` | pas encore |
 
 Pas d'authentification. Format d'un arrêt (copie de l'API open data TAN `arrets.json`) :
 
@@ -71,6 +74,9 @@ nom JSON avec `[JsonPropertyName]` (System.Text.Json) :
 | `distance` | *non repris* | toujours `null` pour la liste complète |
 
 `Arret.HasLigne(numLigne)` indique si une ligne dessert déjà l'arrêt (recherche et contrôle avant ajout).
+`Arret.OriginalLibelle` (F4) mémorise le nom enregistré côté API : il est renseigné après la lecture du
+JSON (`IJsonOnDeserialized`) et après chaque modification réussie. Il permet de ne pas appeler l'API
+quand le nom n'a pas changé, et de rétablir l'ancien nom si l'API refuse la modification.
 
 ## Tests des routes avec Bruno
 
@@ -83,6 +89,7 @@ La collection se trouve dans `bruno/`.
 4. **02 - Reset des données** : statut 200.
 5. **03 - Ajout d'une ligne à un arrêt** : ajoute la ligne `TEST` à l'arrêt `COMM` (statut 2xx).
    Relancer 01 pour vérifier, puis 02 pour revenir aux données initiales.
+6. **04 - Modifier le nom d'un arrêt** : renomme `COMM` en « Commerce (test) » (réponse `true`).
 
 Si les tests passent, le modèle C# correspond à la réponse réelle. Sinon, adapter
 `Models/Arret.cs` et `Models/Ligne.cs` avant tout le reste.
@@ -118,7 +125,8 @@ Dépôt : https://github.com/batyx/TAN-ApiGest
 |---|---|
 | `v0.1` | Première maquette : F1 (liste des arrêts) et F2 (codes des lignes, en pastilles) |
 | `v0.2` | Colonne « Lignes » retirée de la liste des arrêts ; lignes de l'arrêt présentées dans une grille (DataGrid) |
+| `v0.3` | F3 (ajout d'une ligne à un arrêt) et F4 : modification du nom d'un arrêt dans la grille |
 
-Branche en cours : `F3-ajout-ligne-arret` (F3 : ajout d'une ligne à un arrêt).
+Branche en cours : `F4-edition-arret-ligne` (F4 : modification du nom d'un arrêt, puis du code d'une ligne).
 
 Les paquets NuGet, `bin/` et `obj/` ne sont pas versionnés (voir `.gitignore`).
