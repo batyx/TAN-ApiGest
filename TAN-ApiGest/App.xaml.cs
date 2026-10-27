@@ -3,7 +3,11 @@ using Serilog;
 using System.IO;
 using System.Windows;
 using System.Windows.Threading;
+using TanApiGest.Http.Implementations;
+using TanApiGest.Http.Interfaces;
 using TanApiGest.Properties;
+using TanApiGest.Repositories.Implementations;
+using TanApiGest.Repositories.Interfaces;
 using TanApiGest.Services.Implementations;
 using TanApiGest.Services.Interfaces;
 using TanApiGest.ViewModels;
@@ -79,10 +83,16 @@ public partial class App : Application
     {
         ServiceCollection services = new();
 
+        // Couche HTTP — Singleton : un seul HttpClient pour toute l'application
+        services.AddSingleton<IApi, Api>();
+
         // Services — une seule instance partagée dans toute l'application
         services.AddSingleton<ILogService, LogService>();
         services.AddSingleton<ISnackbarService, SnackbarService>();
         services.AddSingleton<IMainWindowNavigationService, MainWindowNavigationService>();
+
+        // Repositories
+        services.AddSingleton<IArretRepository, ArretRepository>();
 
         // ViewModels — une nouvelle instance à chaque résolution
         services.AddTransient<MainWindowViewModel>();
