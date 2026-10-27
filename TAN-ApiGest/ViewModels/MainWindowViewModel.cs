@@ -49,6 +49,12 @@ public partial class MainWindowViewModel : ObservableObject
             IconType = "Home",
             NavigateTo = () => _navigationService.NavigateTo<HomeViewModel>()
         });
+        MainMenuItems.Add(new MainMenuItemNavigation
+        {
+            Label = "Arrêts",
+            IconType = "BusStop",
+            NavigateTo = () => _navigationService.NavigateTo<ArretsViewModel>()
+        });
     }
 
     /// <summary>Appelée une fois la fenêtre chargée : affiche la première entrée du menu.</summary>

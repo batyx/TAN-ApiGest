@@ -97,10 +97,12 @@ public partial class App : Application
         // ViewModels — une nouvelle instance à chaque résolution
         services.AddTransient<MainWindowViewModel>();
         services.AddTransient<HomeViewModel>();
+        services.AddTransient<ArretsViewModel>();
 
         // Fenêtre et vues
         services.AddTransient<MainWindow>();
         services.AddTransient<HomeView>();
+        services.AddTransient<ArretsView>();
 
         return services.BuildServiceProvider();
     }
@@ -109,6 +111,7 @@ public partial class App : Application
     private static void RegisterNavigableViews(IMainWindowNavigationService navigation)
     {
         navigation.Register<HomeViewModel, HomeView>();
+        navigation.Register<ArretsViewModel, ArretsView>();
     }
 
     private void OnDispatcherUnhandledException(object sender, DispatcherUnhandledExceptionEventArgs e)
