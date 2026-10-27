@@ -15,7 +15,7 @@ namespace TanApiGest.Models;
 /// </summary>
 public class Arret
 {
-    private Collection<Ligne> _lignes = new();
+    private ObservableCollection<Ligne> _lignes = new();
 
     /// <summary>Identifiant de l'arrêt (lieu), ex. "COMM".</summary>
     [JsonPropertyName("codeLieu")]
@@ -28,24 +28,25 @@ public class Arret
     /// <summary>
     /// Lignes desservant l'arrêt. Dans le JSON, le champ s'appelle « ligne »
     /// au singulier bien qu'il contienne un tableau.
+    /// <para>
+    /// ObservableCollection (F3) : quand une ligne est ajoutée, la grille des
+    /// lignes et le compteur (Lignes.Count) se mettent à jour automatiquement.
+    /// </para>
     /// Si l'API renvoie null, on garde une collection vide : le reste du code
     /// n'a jamais à tester la nullité.
     /// </summary>
     [JsonPropertyName("ligne")]
-    public Collection<Ligne> Lignes
+    public ObservableCollection<Ligne> Lignes
     {
         get => _lignes;
-        set => _lignes = value ?? new Collection<Ligne>();
+        set => _lignes = value ?? new ObservableCollection<Ligne>();
     }
 
     // Le champ JSON "distance" n'est pas repris : il vaut null pour la liste
     // complète et ne sert qu'aux recherches par position. Les champs JSON
     // sans propriété correspondante sont simplement ignorés à la lecture.
 
-    /// <summary>
-    /// Nombre de lignes desservant l'arrêt, pour l'affichage.
-    /// Calculée : jamais lue ni écrite en JSON.
-    /// </summary>
-    [JsonIgnore]
-    public int NombreLignes => Lignes.Count;
+    /// <summary>Indique si la ligne de code numLigne dessert déjà l'arrêt (comparaison sans casse).</summary>
+    public bool HasLigne(string numLigne)
+        => Lignes.Any(ligne => string.Equals(ligne.NumLigne, numLigne, StringComparison.OrdinalIgnoreCase));
 }

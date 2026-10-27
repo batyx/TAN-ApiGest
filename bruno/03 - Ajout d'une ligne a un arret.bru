@@ -1,0 +1,45 @@
+meta {
+  name: 03 - Ajout d'une ligne à un arrêt
+  type: http
+  seq: 3
+}
+
+post {
+  url: {{baseUrl}}/{{codeLieu}}/arret
+  body: json
+  auth: none
+}
+
+headers {
+  Accept: application/json
+}
+
+body:json {
+  {
+    "numLigne": "{{numLigne}}"
+  }
+}
+
+vars:pre-request {
+  codeLieu: COMM
+  numLigne: TEST
+}
+
+tests {
+  test("L'ajout est accepté (statut 2xx)", function () {
+    expect(res.getStatus()).to.be.within(200, 299);
+  });
+}
+
+docs {
+  # POST /{codeLieu}/arret
+  
+  Ajoute la ligne `numLigne` à l'arrêt `codeLieu`, si elle n'y figure pas déjà.
+  Utilisée par la fonctionnalité F3 de l'application.
+  
+  Corps JSON envoyé par l'application : `{ "numLigne": "C6" }`.
+  
+  Vérification : relancer « 01 - Liste des arrêts » et chercher l'arrêt COMM,
+  la ligne TEST doit apparaître dans son tableau `ligne`.
+  Ensuite, « 02 - Reset des données » remet les données dans leur état initial.
+}

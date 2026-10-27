@@ -9,6 +9,7 @@ données de la plateforme de données publiques.
 |---|---|---|
 | **F1** | Liste des arrêts (bus, tram, etc.) gérés par la TAN, avec recherche par nom, code d'arrêt ou code de ligne | menu ☰ → **Arrêts** (grille) |
 | **F2** | Pour chaque arrêt, codes des lignes qui le desservent | grille des lignes, dans le panneau de détail de l'arrêt sélectionné |
+| **F3** | Ajout d'une ligne à un arrêt | bouton **Ajouter Ligne** de chaque arrêt → fenêtre modale → la grille des lignes se met à jour |
 
 Interface réalisée avec **MaterialDesignInXAML**, sur le modèle du projet AliPurchase (même
 architecture, mêmes paquets, mêmes versions).
@@ -46,6 +47,7 @@ Les routes sont centralisées dans `Http/Implementations/ApiEndpoints.cs`.
 |---|---|---|
 | `GET api/BATY/arrets` | liste des arrêts et de leurs lignes | oui (F1, F2) |
 | `GET api/BATY/reset` | remise des données dans l'état initial | non (tests uniquement) |
+| `POST api/BATY/{codeLieu}/arret` | ajoute `numLigne` à l'arrêt s'il n'y figure pas (corps JSON `{ "numLigne": "C6" }`) | oui (F3) |
 
 Pas d'authentification. Format d'un arrêt (copie de l'API open data TAN `arrets.json`) :
 
@@ -64,11 +66,11 @@ nom JSON avec `[JsonPropertyName]` (System.Text.Json) :
 |---|---|---|
 | `codeLieu` | `Arret.CodeLieu` | `string` |
 | `libelle` | `Arret.Libelle` | `string` |
-| `ligne` | `Arret.Lignes` | `Collection<Ligne>` |
+| `ligne` | `Arret.Lignes` | `ObservableCollection<Ligne>` (la grille se met à jour après un ajout) |
 | `numLigne` | `Ligne.NumLigne` | `string` (codes alphanumériques : `C6`…) |
 | `distance` | *non repris* | toujours `null` pour la liste complète |
 
-`Arret.NombreLignes` est une propriété calculée pour l'affichage, marquée `[JsonIgnore]`.
+`Arret.HasLigne(numLigne)` indique si une ligne dessert déjà l'arrêt (recherche et contrôle avant ajout).
 
 ## Tests des routes avec Bruno
 
@@ -79,6 +81,8 @@ La collection se trouve dans `bruno/`.
 3. Lancer **01 - Liste des arrêts** : statut 200 et trois tests sur la structure du JSON
    (tableau non vide, `codeLieu` / `libelle` / `ligne` présents, `numLigne` sur chaque ligne).
 4. **02 - Reset des données** : statut 200.
+5. **03 - Ajout d'une ligne à un arrêt** : ajoute la ligne `TEST` à l'arrêt `COMM` (statut 2xx).
+   Relancer 01 pour vérifier, puis 02 pour revenir aux données initiales.
 
 Si les tests passent, le modèle C# correspond à la réponse réelle. Sinon, adapter
 `Models/Arret.cs` et `Models/Ligne.cs` avant tout le reste.
@@ -90,12 +94,12 @@ TAN-ApiGest/
 ├── App.xaml(.cs)                  Démarrage : Serilog, filets d'exceptions, conteneur DI
 ├── Properties/AppSettings.cs      URL de l'API
 ├── Http/                          Client HTTP (IApi / Api) + routes (ApiEndpoints)
-├── DTOs/Responses/ApiResponse.cs  Succès + données, ou message d'erreur
+├── DTOs/                          ApiResponse (succès ou erreur), résultats de dialogue
 ├── Models/                        Arret, Ligne (mapping JSON)
 ├── Repositories/                  IArretRepository / ArretRepository
-├── Services/                      Journalisation, Snackbar, navigation interne
-├── ViewModels/                    MainWindow, Home, Arrets (CommunityToolkit.Mvvm)
-└── Views/                         MainWindow, HomeView, ArretsView (+ composant de menu)
+├── Services/                      Journalisation, Snackbar, navigation interne, dialogues
+├── ViewModels/                    MainWindow, Home, Arrets, Dialogs/AddLigne (CommunityToolkit.Mvvm)
+└── Views/                         MainWindow, HomeView, ArretsView, Dialogs/AddLigneDialog (+ composant de menu)
 ```
 
 Flux d'un chargement : `ArretsView` (Loaded) → `ArretsViewModel.LoadArretsCommand` →
@@ -114,5 +118,7 @@ Dépôt : https://github.com/batyx/TAN-ApiGest
 |---|---|
 | `v0.1` | Première maquette : F1 (liste des arrêts) et F2 (codes des lignes, en pastilles) |
 | `v0.2` | Colonne « Lignes » retirée de la liste des arrêts ; lignes de l'arrêt présentées dans une grille (DataGrid) |
+
+Branche en cours : `F3-ajout-ligne-arret` (F3 : ajout d'une ligne à un arrêt).
 
 Les paquets NuGet, `bin/` et `obj/` ne sont pas versionnés (voir `.gitignore`).
