@@ -1,0 +1,33 @@
+<Project Sdk="Microsoft.NET.Sdk">
+
+  <PropertyGroup>
+    <OutputType>WinExe</OutputType>
+    <TargetFramework>net10.0-windows7.0</TargetFramework>
+    <Nullable>enable</Nullable>
+    <ImplicitUsings>enable</ImplicitUsings>
+    <UseWPF>true</UseWPF>
+    <LangVersion>preview</LangVersion>
+
+    <!-- Le nom du projet contient un tiret, interdit dans un espace de noms C# :
+         on fixe donc explicitement l'espace de noms racine et le nom de l'exécutable. -->
+    <RootNamespace>TanApiGest</RootNamespace>
+    <AssemblyName>TAN-ApiGest</AssemblyName>
+    <Product>TAN-ApiGest</Product>
+    <Company>Nantes Métropole</Company>
+  </PropertyGroup>
+
+  <!-- Mêmes paquets (et mêmes versions) qu'AliPurchase, par souci de cohésion
+       entre les applications du service. Ils ne sont PAS versionnés : NuGet les
+       restaure à la compilation. -->
+  <ItemGroup>
+    <PackageReference Include="CommunityToolkit.Mvvm" Version="8.4.2" />
+    <PackageReference Include="MaterialDesignColors" Version="5.3.2" />
+    <PackageReference Include="MaterialDesignThemes" Version="5.3.2" />
+    <PackageReference Include="Microsoft.Extensions.DependencyInjection" Version="10.0.9" />
+    <PackageReference Include="Microsoft.Xaml.Behaviors.Wpf" Version="1.1.135" />
+    <PackageReference Include="Serilog" Version="4.3.1" />
+    <PackageReference Include="Serilog.Sinks.Debug" Version="3.0.0" />
+    <PackageReference Include="Serilog.Sinks.File" Version="7.0.0" />
+  </ItemGroup>
+
+</Project>

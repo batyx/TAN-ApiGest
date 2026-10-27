@@ -1,0 +1,21 @@
+# --- Visual Studio / Rider ---
+.vs/
+.idea/
+*.user
+*.suo
+
+# --- Sorties de compilation ---
+**/bin/
+**/obj/
+
+# --- Librairies : on ne versionne pas les paquets NuGet ---
+# Ils sont restaurés automatiquement à partir des <PackageReference> du .csproj
+# (dotnet restore / première compilation dans Visual Studio).
+packages/
+*.nupkg
+
+# --- Journaux applicatifs (Serilog) ---
+logs/
+
+# --- Divers ---
+.claude/

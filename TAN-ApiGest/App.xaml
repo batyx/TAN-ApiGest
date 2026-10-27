@@ -1,0 +1,21 @@
+<Application
+    x:Class="TanApiGest.App"
+    xmlns="http://schemas.microsoft.com/winfx/2006/xaml/presentation"
+    xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
+    xmlns:materialDesign="http://materialdesigninxaml.net/winfx/xaml/themes">
+    <Application.Resources>
+        <ResourceDictionary>
+            <ResourceDictionary.MergedDictionaries>
+                <!--  Thème Material Design 3, comme AliPurchase ; couleurs proches de la charte Naolib.  -->
+                <materialDesign:BundledTheme
+                    BaseTheme="Light"
+                    PrimaryColor="Green"
+                    SecondaryColor="Amber" />
+                <ResourceDictionary Source="pack://application:,,,/MaterialDesignThemes.Wpf;component/Themes/MaterialDesign3.Defaults.xaml" />
+            </ResourceDictionary.MergedDictionaries>
+
+            <!--  Convertisseur standard WPF : true → Visible, false → Collapsed.  -->
+            <BooleanToVisibilityConverter x:Key="BooleanToVisibilityConverter" />
+        </ResourceDictionary>
+    </Application.Resources>
+</Application>
