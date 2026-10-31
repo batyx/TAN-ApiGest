@@ -1,0 +1,40 @@
+meta {
+  name: 05 - Erreur : arrêt introuvable
+  type: http
+  seq: 5
+}
+
+put {
+  url: {{baseUrl}}/{{codeLieu}}/arret
+  body: json
+  auth: none
+}
+
+body:json {
+  {
+    "libelle": "Peu importe"
+  }
+}
+
+vars:pre-request {
+  codeLieu: ZZZZ
+}
+
+tests {
+  test("Statut 404", function () {
+    expect(res.getStatus()).to.equal(404);
+  });
+  
+  test("Erreur au format JSON avec un message", function () {
+    expect(res.getHeader("content-type")).to.contain("application/json");
+    expect(res.getBody().message).to.equal("Arrêt ZZZZ introuvable.");
+  });
+}
+
+docs {
+  # Exemple d'erreur V2
+  
+  Volontairement sans en-tête `Accept` : l'API V2 renvoie quand même l'erreur
+  en JSON `{ "message": "..." }`. C'est ce message que l'application affiche
+  à l'utilisateur.
+}

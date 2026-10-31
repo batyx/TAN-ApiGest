@@ -30,21 +30,24 @@ tests {
     expect(res.getStatus()).to.equal(200);
   });
   
-  test("Le nom est modifié (l'API répond true)", function () {
-    expect(res.getBody()).to.equal(true);
+  test("La réponse est l'arrêt avec son nouveau nom", function () {
+    expect(res.getBody().codeLieu).to.equal("COMM");
+    expect(res.getBody().libelle).to.equal("Commerce (test)");
   });
 }
 
 docs {
   # PUT /{codeLieu}/arret
   
-  Modifie l'arrêt `codeLieu`. Utilisée par la fonctionnalité F4 de l'application,
-  qui n'envoie que le nom : `{ "libelle": "Nouveau nom" }`.
-  L'API accepte aussi `codeLieu` dans le corps pour changer le code (non utilisé).
+  Modifie l'arrêt `codeLieu`. Utilisée par la fonctionnalité F4, qui n'envoie
+  que le nom : `{ "libelle": "Nouveau nom" }`. L'API accepte aussi `codeLieu`
+  dans le corps pour changer le code (non utilisé par l'application).
   
-  Réponse : toujours statut 200, avec `true` si l'arrêt est modifié, `false` si
-  l'arrêt est introuvable, si une valeur est vide ou si le nouveau code est déjà pris.
+  Réponses (V2) :
+  - 200 + l'arrêt modifié ;
+  - 404 si l'arrêt est introuvable ;
+  - 409 si le nouveau code est déjà celui d'un autre arrêt ;
+  - 422 si le corps est vide ou si une valeur envoyée est vide.
   
-  Vérification : relancer « 01 - Liste des arrêts », l'arrêt COMM doit s'appeler
-  « Commerce (test) ». Ensuite, « 02 - Reset des données » rétablit les données.
+  Ensuite, « 02 - Reset des données » rétablit les données.
 }

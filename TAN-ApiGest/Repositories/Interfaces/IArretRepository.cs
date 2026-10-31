@@ -4,7 +4,10 @@ using TanApiGest.Models;
 
 namespace TanApiGest.Repositories.Interfaces;
 
-/// <summary>Accès aux arrêts du réseau TAN.</summary>
+/// <summary>
+/// Accès aux arrêts du réseau TAN (API V2). En cas d'échec, ErrorMessage
+/// contient le message renvoyé par l'API (ex. « Arrêt ZZZZ introuvable. »).
+/// </summary>
 public interface IArretRepository
 {
     /// <summary>Récupère tous les arrêts, avec pour chacun les lignes qui le desservent.</summary>
@@ -18,13 +21,14 @@ public interface IArretRepository
 
     /// <summary>
     /// F4 : remplace le nom de l'arrêt codeLieu par libelle.
-    /// Échec si l'API est injoignable ou refuse la modification.
+    /// En cas de succès, Data contient l'arrêt tel qu'enregistré par l'API.
     /// </summary>
-    Task<ApiResponse<bool>> UpdateLibelleAsync(string codeLieu, string libelle, CancellationToken cancellationToken = default);
+    Task<ApiResponse<Arret>> UpdateLibelleAsync(string codeLieu, string libelle, CancellationToken cancellationToken = default);
 
     /// <summary>
     /// Remet tous les arrêts et leurs lignes dans l'état initial : toutes les
-    /// modifications faites via l'application sont perdues.
+    /// modifications faites via l'application sont perdues. En cas de succès,
+    /// Data contient la liste réinitialisée (inutile de la recharger).
     /// </summary>
-    Task<ApiResponse<bool>> ResetAsync(CancellationToken cancellationToken = default);
+    Task<ApiResponse<Collection<Arret>>> ResetAsync(CancellationToken cancellationToken = default);
 }

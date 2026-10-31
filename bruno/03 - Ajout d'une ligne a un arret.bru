@@ -26,28 +26,28 @@ vars:pre-request {
 }
 
 tests {
-  test("Statut 200", function () {
-    expect(res.getStatus()).to.equal(200);
+  test("Statut 201 Created", function () {
+    expect(res.getStatus()).to.equal(201);
   });
   
-  test("La ligne est ajoutée (l'API répond true)", function () {
-    expect(res.getBody()).to.equal(true);
+  test("La réponse est la ligne ajoutée", function () {
+    expect(res.getBody().numLigne).to.equal("TEST");
   });
 }
 
 docs {
   # POST /{codeLieu}/arret
   
-  Ajoute la ligne `numLigne` à l'arrêt `codeLieu`, si elle n'y figure pas déjà.
-  Utilisée par la fonctionnalité F3 de l'application.
+  Ajoute la ligne `numLigne` à l'arrêt `codeLieu`. Utilisée par la fonctionnalité F3.
+  Corps JSON : `{ "numLigne": "C6" }`.
   
-  Corps JSON envoyé par l'application : `{ "numLigne": "C6" }`.
+  Réponses (V2) :
+  - 201 + la ligne ajoutée : `{ "numLigne": "TEST" }` ;
+  - 409 si la ligne dessert déjà l'arrêt : relancer la requête une seconde fois
+    donne donc 409 (les tests échouent, c'est attendu) ;
+  - 404 si l'arrêt est introuvable ;
+  - 422 si `numLigne` est absent ou vide.
   
-  Réponse : toujours statut 200, avec `true` si la ligne a été ajoutée, `false` si
-  l'arrêt est introuvable ou si la ligne y figure déjà. Relancer la requête une
-  seconde fois doit donc donner `false` (le second test échoue, c'est attendu).
-  
-  Vérification : relancer « 01 - Liste des arrêts » et chercher l'arrêt COMM,
-  la ligne TEST doit apparaître dans son tableau `ligne`.
+  Les erreurs ont un corps `{ "message": "..." }`.
   Ensuite, « 02 - Reset des données » remet les données dans leur état initial.
 }
