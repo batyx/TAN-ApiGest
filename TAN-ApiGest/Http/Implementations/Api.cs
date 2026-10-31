@@ -14,6 +14,8 @@ namespace TanApiGest.Http.Implementations;
 /// être partagé). L'API TAN est en accès libre : aucun en-tête
 /// d'authentification n'est ajouté. Toutes les erreurs techniques sont
 /// converties en ApiResponse en échec, avec un message pour l'utilisateur.
+/// Avec l'API V2, le succès se lit dans le code HTTP (2xx) ; en cas d'erreur
+/// (404, 409, 422...), c'est le message renvoyé par l'API qui est transmis.
 /// </summary>
 public class Api : IApi
 {
@@ -64,12 +66,16 @@ public class Api : IApi
             _log.Debug($"← {method} {route} : {(int)response.StatusCode}");
 
             if (!response.IsSuccessStatusCode)
-                return ApiResponse<T>.Failure($"Erreur serveur ({(int)response.StatusCode}) : {response.ReasonPhrase}");
+            {
+                string errorMessage = await ReadErrorMessageAsync(response, cancellationToken);
+                _log.Warning($"{method} {route} : {(int)response.StatusCode} {errorMessage}");
+                return ApiResponse<T>.Failure(errorMessage);
+            }
 
             string json = await response.Content.ReadAsStringAsync(cancellationToken);
 
-            // Une écriture réussie peut renvoyer un corps vide : ce n'est pas une
-            // erreur, il n'y a simplement rien à désérialiser.
+            // Une réponse réussie peut être vide (204 No Content) : ce n'est pas
+            // une erreur, il n'y a simplement rien à désérialiser.
             if (string.IsNullOrWhiteSpace(json))
                 return ApiResponse<T>.Success(default);
 
@@ -104,6 +110,29 @@ public class Api : IApi
             // réponse exploitable plutôt que de remonter jusqu'à l'interface.
             _log.Fatal($"Exception non anticipée {method} {route}", ex);
             return ApiResponse<T>.Failure("Une erreur inattendue est survenue. Réessayez, et contactez le support si le problème persiste.");
+        }
+    }
+
+    /// <summary>
+    /// Message à afficher pour une réponse en erreur : le champ "message" du corps
+    /// JSON renvoyé par l'API V2 (ex. « Arrêt ZZZZ introuvable. »), ou à défaut
+    /// le code HTTP (corps vide, ou page HTML renvoyée par un intermédiaire).
+    /// </summary>
+    private static async Task<string> ReadErrorMessageAsync(HttpResponseMessage response, CancellationToken cancellationToken)
+    {
+        string fallback = $"Erreur serveur ({(int)response.StatusCode}) : {response.ReasonPhrase}";
+
+        try
+        {
+            string json = await response.Content.ReadAsStringAsync(cancellationToken);
+            ApiErrorResponse? error = JsonSerializer.Deserialize<ApiErrorResponse>(json, _jsonOptions);
+            string? message = error?.Message;
+
+            return string.IsNullOrWhiteSpace(message) ? fallback : message;
+        }
+        catch (JsonException)
+        {
+            return fallback;
         }
     }
 

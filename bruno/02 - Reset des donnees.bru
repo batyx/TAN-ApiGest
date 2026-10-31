@@ -14,12 +14,18 @@ assert {
   res.status: eq 200
 }
 
+tests {
+  test("La réponse est la liste réinitialisée", function () {
+    expect(res.getBody()).to.be.an("array").that.is.not.empty;
+  });
+}
+
 docs {
   # GET /reset
   
   Remet les données de cette copie de l'API dans leur état initial.
-  À utiliser après des essais de modification, puis relancer « 01 - Liste des arrêts »
-  pour vérifier que la liste est revenue à l'identique.
+  Utilisée par le bouton « Réinitialiser » de l'écran Arrêts.
   
-  Utilisée par le bouton « Réinitialiser » de l'écran Arrêts. Réponse : `true`.
+  Réponse (V2) : 200 + la liste des arrêts réinitialisée, au même format que
+  « 01 - Liste des arrêts ». L'application l'affiche directement.
 }

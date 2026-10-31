@@ -102,12 +102,7 @@ public partial class ArretsViewModel : ObservableObject
                 return;
             }
 
-            // Tri alphabétique sur le libellé : l'API ne garantit aucun ordre.
-            _allArrets = (result.Data ?? new Collection<Arret>())
-                .OrderBy(arret => arret.Libelle, StringComparer.CurrentCulture)
-                .ToList();
-
-            ApplyFilter();
+            DisplayArrets(result.Data);
             _snackbarService.ShowSuccess($"{_allArrets.Count:N0} arrêts chargés");
             _log.Information($"{_allArrets.Count} arrêts chargés");
         }
@@ -119,7 +114,8 @@ public partial class ArretsViewModel : ObservableObject
 
     /// <summary>
     /// Remet les données de l'API dans leur état initial (toutes les modifications
-    /// sont perdues), puis recharge la liste pour afficher les données d'origine.
+    /// sont perdues). L'API V2 renvoie la liste réinitialisée : on l'affiche
+    /// directement, sans second appel.
     /// </summary>
     [RelayCommand(CanExecute = nameof(CanRunCommand))]
     private async Task ResetAsync()
@@ -129,7 +125,7 @@ public partial class ArretsViewModel : ObservableObject
         CancellationToken token = RenewToken();
         try
         {
-            ApiResponse<bool> result = await _arretRepository.ResetAsync(token);
+            ApiResponse<Collection<Arret>> result = await _arretRepository.ResetAsync(token);
 
             if (token.IsCancellationRequested) return;
 
@@ -139,17 +135,35 @@ public partial class ArretsViewModel : ObservableObject
                 return;
             }
 
-            _snackbarService.ShowSuccess("Données réinitialisées");
+            DisplayArrets(result.Data);
+            _snackbarService.ShowSuccess($"Données réinitialisées : {_allArrets.Count:N0} arrêts");
             _log.Information("Données de l'API réinitialisées");
         }
         finally
         {
             IsBusy = false;
         }
+    }
 
-        // La liste affichée contient peut-être des modifications annulées par le
-        // reset : on la recharge depuis l'API (IsBusy est de nouveau à false).
-        await LoadArretsAsync();
+    /// <summary>
+    /// Remplace la liste complète par les arrêts reçus de l'API, triés par nom
+    /// (l'API ne garantit aucun ordre), après avoir mémorisé le nom d'origine
+    /// de chacun, puis réapplique la recherche en cours.
+    /// Tout arrêt reçu de l'API doit passer par ici (chargement et reset).
+    /// </summary>
+    private void DisplayArrets(Collection<Arret>? arrets)
+    {
+        _allArrets = (arrets ?? new Collection<Arret>())
+            .OrderBy(arret => arret.Libelle, StringComparer.CurrentCulture)
+            .ToList();
+
+        // Le JSON a rempli Libelle, mais OriginalLibelle est encore vide.
+        foreach (Arret arret in _allArrets)
+        {
+            arret.AcceptLibelle();
+        }
+
+        ApplyFilter();
     }
 
     /// <summary>
@@ -193,10 +207,13 @@ public partial class ArretsViewModel : ObservableObject
                 return;
             }
 
+            // L'API renvoie la ligne créée (201) ; par sécurité, on se rabat sur la saisie.
+            Ligne ligne = result.Data ?? new Ligne { NumLigne = dialogResult.NumLigne };
+
             // Lignes est une ObservableCollection : la grille de droite se met à jour seule.
-            arret.Lignes.Add(result.Data!);
-            _snackbarService.ShowSuccess($"Ligne {result.Data!.NumLigne} ajoutée à l'arrêt « {arret.Libelle} »");
-            _log.Information($"Ligne ajoutée : {arret.CodeLieu}/{result.Data.NumLigne}");
+            arret.Lignes.Add(ligne);
+            _snackbarService.ShowSuccess($"Ligne {ligne.NumLigne} ajoutée à l'arrêt « {arret.Libelle} »");
+            _log.Information($"Ligne ajoutée : {arret.CodeLieu}/{ligne.NumLigne}");
         }
         finally
         {
@@ -238,7 +255,7 @@ public partial class ArretsViewModel : ObservableObject
         CancellationToken token = RenewToken();
         try
         {
-            ApiResponse<bool> result = await _arretRepository.UpdateLibelleAsync(arret.CodeLieu, libelle, token);
+            ApiResponse<Arret> result = await _arretRepository.UpdateLibelleAsync(arret.CodeLieu, libelle, token);
 
             if (token.IsCancellationRequested)
             {
@@ -249,15 +266,18 @@ public partial class ArretsViewModel : ObservableObject
             if (!result.IsSuccess)
             {
                 // L'affichage doit refléter ce qui est réellement enregistré côté API.
+                // ErrorMessage est celui de l'API (ex. 404 « Arrêt ZZZZ introuvable. »).
                 arret.RevertLibelle();
                 _snackbarService.ShowError(result.ErrorMessage);
                 return;
             }
 
-            arret.Libelle = libelle;
+            // L'API renvoie l'arrêt tel qu'elle l'a enregistré : c'est ce nom qui fait foi.
+            string savedLibelle = result.Data?.Libelle ?? libelle;
+            arret.Libelle = savedLibelle;
             arret.AcceptLibelle();
-            _snackbarService.ShowSuccess($"Arrêt {arret.CodeLieu} renommé « {libelle} »");
-            _log.Information($"Arrêt renommé : {arret.CodeLieu}/{libelle}");
+            _snackbarService.ShowSuccess($"Arrêt {arret.CodeLieu} renommé « {savedLibelle} »");
+            _log.Information($"Arrêt renommé : {arret.CodeLieu}/{savedLibelle}");
         }
         finally
         {
