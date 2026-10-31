@@ -147,13 +147,21 @@ public partial class ArretsViewModel : ObservableObject
 
     /// <summary>
     /// Remplace la liste complète par les arrêts reçus de l'API, triés par nom
-    /// (l'API ne garantit aucun ordre), puis réapplique la recherche en cours.
+    /// (l'API ne garantit aucun ordre), après avoir mémorisé le nom d'origine
+    /// de chacun, puis réapplique la recherche en cours.
+    /// Tout arrêt reçu de l'API doit passer par ici (chargement et reset).
     /// </summary>
     private void DisplayArrets(Collection<Arret>? arrets)
     {
         _allArrets = (arrets ?? new Collection<Arret>())
             .OrderBy(arret => arret.Libelle, StringComparer.CurrentCulture)
             .ToList();
+
+        // Le JSON a rempli Libelle, mais OriginalLibelle est encore vide.
+        foreach (Arret arret in _allArrets)
+        {
+            arret.AcceptLibelle();
+        }
 
         ApplyFilter();
     }

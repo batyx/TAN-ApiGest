@@ -19,7 +19,7 @@ namespace TanApiGest.Models;
 /// </para>
 /// Exemple : { "codeLieu": "COMM", "libelle": "Commerce", "distance": null, "ligne": [ { "numLigne": "1" } ] }
 /// </summary>
-public partial class Arret : ObservableObject, IJsonOnDeserialized
+public partial class Arret : ObservableObject
 {
     private ObservableCollection<Ligne> _lignes = new();
 
@@ -33,9 +33,10 @@ public partial class Arret : ObservableObject, IJsonOnDeserialized
     public partial string Libelle { get; set; } = string.Empty;
 
     /// <summary>
-    /// Nom tel qu'il est enregistré côté API : renseigné au chargement, puis
-    /// après chaque modification réussie. Permet de savoir si le nom a changé
-    /// et de le rétablir si l'API refuse la modification.
+    /// Nom tel qu'il est enregistré côté API. Il ne vient pas du JSON :
+    /// ArretsViewModel l'initialise après chaque chargement (DisplayArrets), puis
+    /// AcceptLibelle() le met à jour après chaque modification réussie. Permet de
+    /// savoir si le nom a changé et de le rétablir si l'API refuse la modification.
     /// </summary>
     [JsonIgnore]
     public string OriginalLibelle { get; private set; } = string.Empty;
@@ -61,10 +62,7 @@ public partial class Arret : ObservableObject, IJsonOnDeserialized
     // complète et ne sert qu'aux recherches par position. Les champs JSON
     // sans propriété correspondante sont simplement ignorés à la lecture.
 
-    /// <summary>Appelée par System.Text.Json une fois l'objet rempli : on mémorise le nom d'origine.</summary>
-    void IJsonOnDeserialized.OnDeserialized() => OriginalLibelle = Libelle;
-
-    /// <summary>Enregistre le nom actuel comme nom d'origine (après une modification réussie).</summary>
+    /// <summary>Le nom actuel devient le nom de référence (chargement ou modification réussie).</summary>
     public void AcceptLibelle() => OriginalLibelle = Libelle;
 
     /// <summary>Rétablit le nom d'origine (modification annulée ou refusée).</summary>
