@@ -22,6 +22,9 @@ architecture, mêmes paquets, mêmes versions).
   « Développement .NET Desktop », SDK **.NET 10** (comme AliPurchase).
 - Accès au réseau local hébergeant l'API dupliquée, version 2 : `http://192.168.1.14/api/v2/BATY/`.
 
+Le cahier des charges (contexte, user stories, spécifications, étapes) est dans
+[`docs/cahier-des-charges.md`](docs/cahier-des-charges.md).
+
 ## Installation
 
 ```bash
@@ -83,9 +86,10 @@ nom JSON avec `[JsonPropertyName]` (System.Text.Json) :
 | `distance` | *non repris* | toujours `null` pour la liste complète |
 
 `Arret.HasLigne(numLigne)` indique si une ligne dessert déjà l'arrêt (recherche et contrôle avant ajout).
-`Arret.OriginalLibelle` (F4) mémorise le nom enregistré côté API : il est renseigné après la lecture du
-JSON (`IJsonOnDeserialized`) et après chaque modification réussie. Il permet de ne pas appeler l'API
-quand le nom n'a pas changé, et de rétablir l'ancien nom si l'API refuse la modification.
+`Arret.OriginalLibelle` (F4) mémorise le nom enregistré côté API : `ArretsViewModel.DisplayArrets`
+l'initialise par un `foreach` après chaque chargement (`AcceptLibelle()`), puis il est mis à jour après
+chaque modification réussie. Il permet de ne pas appeler l'API quand le nom n'a pas changé, et de
+rétablir l'ancien nom (`RevertLibelle()`) si l'API refuse la modification.
 
 ## Tests des routes avec Bruno
 
